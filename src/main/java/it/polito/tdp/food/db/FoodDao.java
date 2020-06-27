@@ -5,7 +5,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+
+import it.polito.tdp.food.model.Adiacenza;
 import it.polito.tdp.food.model.Condiment;
 import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Portion;
@@ -94,6 +97,77 @@ public class FoodDao {
 							res.getDouble("saturated_fats"),
 							res.getInt("food_code")
 							));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+
+	}
+
+	public Collection<String> getPorzioni(int calorie) {
+		
+		String sql = "SELECT distinct p.portion_display_name as name " + 
+				"FROM  `portion` AS p " + 
+				"WHERE p.calories <= ? " ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1, calorie);
+			
+			List<String> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(res.getString("name"));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+		
+	}
+
+	public Collection<Adiacenza> getAdiacenze(List<String> vertici) {
+		String sql = "SELECT  distinct p1.portion_display_name p1, p2.portion_display_name p2 , COUNT(p1.portion_id) AS peso " + 
+				"FROM  `portion` AS p1,`portion` AS p2 " + 
+				"WHERE p1.portion_display_name > p2.portion_display_name AND p1.food_code= p2.food_code " + 
+				"GROUP BY p1.portion_display_name, p2.portion_display_name" ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			List<Adiacenza> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					
+					if(vertici.contains(res.getString("p1"))&&vertici.contains(res.getString("p2"))){
+						list.add(new Adiacenza(res.getString("p1"),res.getString("p2"),res.getInt("peso")));
+						
+					}
+					
+				
 				} catch (Throwable t) {
 					t.printStackTrace();
 				}
